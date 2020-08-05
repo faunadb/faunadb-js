@@ -2559,8 +2559,10 @@ describe('query', () => {
     )
 
     expect(res).toBeInstanceOf(values.Query)
-    expect(res.toJSON()).toEqual({
-      '@query': { api_version: '2.12', lambda: 'X', expr: { var: 'X' } },
+    expect(res.query).toEqual({
+      api_version: '2.12',
+      lambda: 'X',
+      expr: { var: 'X' },
     })
   })
 

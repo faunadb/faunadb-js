@@ -151,8 +151,8 @@ describe('Values', () => {
   })
 
   var assertPrint = function(value, expected) {
-    expect(expected).toEqual(util.inspect(value, { depth: null }))
-    expect(expected).toEqual(value.toString())
+    expect(util.inspect(value, { depth: null })).toEqual(expected)
+    expect(value.toString()).toEqual(expected)
   }
 
   test('pretty print', () => {
@@ -494,6 +494,32 @@ describe('Values', () => {
     assertPrint(
       new Query({ api_version: '3', lambda: 'X', expr: { var: 'X' } }),
       `Query(Lambda("X", Var("X")))`
+    )
+  })
+
+  test('JSON.stringfy', () => {
+    expect(JSON.stringify(ref)).toEqual(
+      '{"id":"123","collection":{"id":"frogs","collection":{"id":"collections"}}}'
+    )
+
+    expect(JSON.stringify(new FaunaDate('2020-01-01'))).toEqual(
+      '{"isoDate":"2020-01-01"}'
+    )
+
+    expect(JSON.stringify(new FaunaTime('2020-01-01T00:00:00Z'))).toEqual(
+      '{"isoTime":"2020-01-01T00:00:00Z"}'
+    )
+
+    expect(JSON.stringify(new SetRef({ match: { index: 'idx' } }))).toEqual(
+      '{"set":{"match":{"index":"idx"}}}'
+    )
+
+    expect(
+      JSON.stringify(new Query({ lambda: 'x', expr: { var: 'x' } }))
+    ).toEqual('{"query":{"lambda":"x","expr":{"var":"x"}}}')
+
+    expect(JSON.stringify(new Bytes('AQIDBA=='))).toEqual(
+      '{"bytes":"AQIDBA=="}'
     )
   })
 })

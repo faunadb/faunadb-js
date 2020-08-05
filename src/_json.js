@@ -1,14 +1,64 @@
 'use strict'
 
 var values = require('./values')
+var Expr = require('./Expr')
+
+function faunaTypes(key, value) {
+  if (key === '') {
+    value = this[key]
+  }
+
+  if (
+    key !== '' &&
+    typeof value === 'undefined' &&
+    typeof this !== 'undefined'
+  ) {
+    value = this[key]
+  }
+
+  if (value && value.constructor === Expr) {
+    return value.raw
+  }
+
+  if (value instanceof values.Ref) {
+    var ref = {
+      id: value.id,
+      collection: value.collection,
+      database: value.database,
+    }
+    return { '@ref': ref }
+  }
+
+  if (value instanceof values.SetRef) {
+    return { '@set': value.set }
+  }
+
+  if (value instanceof values.Query) {
+    return { '@query': value.query }
+  }
+
+  if (value instanceof values.FaunaDate) {
+    return { '@date': value.isoDate }
+  }
+
+  if (value instanceof values.FaunaTime) {
+    return { '@ts': value.isoTime }
+  }
+
+  if (value instanceof values.Bytes) {
+    return { '@bytes': value.bytes }
+  }
+
+  return value
+}
 
 function toJSON(object, pretty) {
   pretty = typeof pretty !== 'undefined' ? pretty : false
 
   if (pretty) {
-    return JSON.stringify(object, null, '  ')
+    return JSON.stringify(object, faunaTypes, '  ')
   } else {
-    return JSON.stringify(object)
+    return JSON.stringify(object, faunaTypes)
   }
 }
 

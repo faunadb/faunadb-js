@@ -176,7 +176,7 @@ Client.prototype._execute = function(method, path, data, query, options) {
   var startTime = Date.now()
   var self = this
   var body =
-    ['GET', 'HEAD'].indexOf(method) >= 0 ? undefined : JSON.stringify(data)
+    ['GET', 'HEAD'].indexOf(method) >= 0 ? undefined : json.toJSON(data)
 
   return this._performRequest(method, path, body, query, options).then(function(
     response

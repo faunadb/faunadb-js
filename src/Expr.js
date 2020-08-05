@@ -15,10 +15,6 @@ function Expr(obj) {
 
 Expr.prototype._isFaunaExpr = true
 
-Expr.prototype.toJSON = function() {
-  return this.raw
-}
-
 var varArgsFunctions = [
   'Do',
   'Call',
@@ -80,7 +76,14 @@ var exprToString = function(expr, caller) {
   }
 
   if (isExpr(expr)) {
-    if ('value' in expr) return expr.toString()
+    if ('id' in expr || 'collection' in expr || 'database' in expr)
+      return expr.toString()
+    if ('set' in expr) return expr.toString()
+    if ('isoTime' in expr) return expr.toString()
+    if ('isoDate' in expr) return expr.toString()
+    if ('bytes' in expr) return expr.toString()
+    if ('query' in expr) return expr.toString()
+
     expr = expr.raw
   }
 

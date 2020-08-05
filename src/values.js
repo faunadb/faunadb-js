@@ -54,26 +54,14 @@ util.inherits(Value, Expr)
 function Ref(id, collection, database) {
   if (!id) throw new errors.InvalidValue('id cannot be null or undefined')
 
-  this.value = { id: id }
-  if (collection) this.value['collection'] = collection
-  if (database) this.value['database'] = database
+  this.id = id
+  this.collection = collection || undefined
+  this.database = database || undefined
 }
 
 Ref.prototype._isFaunaRef = true
 
 util.inherits(Ref, Value)
-
-/**
- * Gets the collection part out of the Ref.
- *
- * @member {string}
- * @name module:values~Ref#collection
- */
-Object.defineProperty(Ref.prototype, 'collection', {
-  get: function() {
-    return this.value['collection']
-  },
-})
 
 /**
  * DEPRECATED. Gets the class part out of the Ref.
@@ -83,38 +71,9 @@ Object.defineProperty(Ref.prototype, 'collection', {
  */
 Object.defineProperty(Ref.prototype, 'class', {
   get: deprecate(function() {
-    return this.value['collection']
+    return this.collection
   }, 'class is deprecated, use collection instead'),
 })
-
-/**
- * Gets the database part out of the Ref.
- *
- * @member {Ref}
- * @name module:values~Ref#database
- */
-Object.defineProperty(Ref.prototype, 'database', {
-  get: function() {
-    return this.value['database']
-  },
-})
-
-/**
- * Gets the id part out of the Ref.
- *
- * @member {Ref}
- * @name module:values~Ref#id
- */
-Object.defineProperty(Ref.prototype, 'id', {
-  get: function() {
-    return this.value['id']
-  },
-})
-
-/** @ignore */
-Ref.prototype.toJSON = function() {
-  return { '@ref': this.value }
-}
 
 wrapToString(Ref, function() {
   var constructors = {
@@ -145,9 +104,13 @@ wrapToString(Ref, function() {
 })
 
 /** @ignore */
-Ref.prototype.valueOf = function() {
-  return this.value
-}
+Ref.prototype.valueOf = deprecate(function() {
+  return {
+    id: this.id,
+    collection: this.collection,
+    database: this.database,
+  }
+}, 'Ref.valueOf() is deprecated')
 
 /**
  * Whether these are both Refs and have the same value.
@@ -205,19 +168,14 @@ Native.fromName = function(name) {
  */
 function SetRef(value) {
   /** Raw query object. */
-  this.value = value
+  this.set = value
 }
 
 util.inherits(SetRef, Value)
 
 wrapToString(SetRef, function() {
-  return Expr.toString(this.value)
+  return Expr.toString(this.set)
 })
-
-/** @ignore */
-SetRef.prototype.toJSON = function() {
-  return { '@set': this.value }
-}
 
 /** FaunaDB time. See the [docs](https://app.fauna.com/documentation/reference/queryapi#special-type).
  *
@@ -232,7 +190,7 @@ function FaunaTime(value) {
     throw new errors.InvalidValue("Only allowed timezone is 'Z', got: " + value)
   }
 
-  this.value = value
+  this.isoTime = value
 }
 
 util.inherits(FaunaTime, Value)
@@ -246,18 +204,13 @@ util.inherits(FaunaTime, Value)
  */
 Object.defineProperty(FaunaTime.prototype, 'date', {
   get: function() {
-    return new Date(this.value)
+    return new Date(this.isoTime)
   },
 })
 
 wrapToString(FaunaTime, function() {
-  return 'Time("' + this.value + '")'
+  return 'Time("' + this.isoTime + '")'
 })
-
-/** @ignore */
-FaunaTime.prototype.toJSON = function() {
-  return { '@ts': this.value }
-}
 
 /** FaunaDB date. See the [docs](https://app.fauna.com/documentation/reference/queryapi#special-type).
  *
@@ -276,7 +229,7 @@ function FaunaDate(value) {
    * ISO8601 date.
    * @type {string}
    */
-  this.value = value
+  this.isoDate = value
 }
 
 util.inherits(FaunaDate, Value)
@@ -287,18 +240,13 @@ util.inherits(FaunaDate, Value)
  */
 Object.defineProperty(FaunaDate.prototype, 'date', {
   get: function() {
-    return new Date(this.value)
+    return new Date(this.isoDate)
   },
 })
 
 wrapToString(FaunaDate, function() {
-  return 'Date("' + this.value + '")'
+  return 'Date("' + this.isoDate + '")'
 })
-
-/** @ignore */
-FaunaDate.prototype.toJSON = function() {
-  return { '@date': this.value }
-}
 
 /** FaunaDB bytes. See the [docs](https://app.fauna.com/documentation/reference/queryapi#special-type).
  *
@@ -310,29 +258,26 @@ FaunaDate.prototype.toJSON = function() {
  */
 function Bytes(value) {
   if (value instanceof ArrayBuffer) {
-    this.value = new Uint8Array(value)
+    var byteArray = new Uint8Array(value)
   } else if (typeof value === 'string') {
-    this.value = base64.toByteArray(value)
+    var byteArray = base64.toByteArray(value)
   } else if (value instanceof Uint8Array) {
-    this.value = value
+    var byteArray = value
   } else {
     throw new errors.InvalidValue(
       'Bytes type expect argument to be either Uint8Array|ArrayBuffer|string, got: ' +
         stringify(value)
     )
   }
+
+  this.bytes = base64.fromByteArray(byteArray)
 }
 
 util.inherits(Bytes, Value)
 
 wrapToString(Bytes, function() {
-  return 'Bytes("' + base64.fromByteArray(this.value) + '")'
+  return 'Bytes("' + this.bytes + '")'
 })
-
-/** @ignore */
-Bytes.prototype.toJSON = function() {
-  return { '@bytes': base64.fromByteArray(this.value) }
-}
 
 /** FaunaDB query. See the [docs](https://app.fauna.com/documentation/reference/queryapi#special-type).
  *
@@ -341,19 +286,14 @@ Bytes.prototype.toJSON = function() {
  * @constructor
  */
 function Query(value) {
-  this.value = value
+  this.query = value
 }
 
 util.inherits(Query, Value)
 
 wrapToString(Query, function() {
-  return 'Query(' + Expr.toString(this.value) + ')'
+  return 'Query(' + Expr.toString(this.query) + ')'
 })
-
-/** @ignore */
-Query.prototype.toJSON = function() {
-  return { '@query': this.value }
-}
 
 /** @ignore */
 function wrapToString(type, fn) {
