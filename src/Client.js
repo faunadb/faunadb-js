@@ -1,6 +1,6 @@
 'use strict'
 
-var APIVersion = '3'
+var APIVersion = 'UNSTABLE'
 
 var btoa = require('btoa-lite')
 var errors = require('./errors')

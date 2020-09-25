@@ -52,25 +52,11 @@ var varArgsFunctions = [
 // Core update: https://faunadb.atlassian.net/browse/ENG-2110
 
 var specialCases = {
-  containsstrregex: 'ContainsStrRegex',
-  endswith: 'EndsWith',
-  findstr: 'FindStr',
-  findstrregex: 'FindStrRegex',
   gt: 'GT',
   gte: 'GTE',
   is_nonempty: 'is_non_empty',
-  lowercase: 'LowerCase',
   lt: 'LT',
   lte: 'LTE',
-  ltrim: 'LTrim',
-  rtrim: 'RTrim',
-  regexescape: 'RegexEscape',
-  replacestr: 'ReplaceStr',
-  replacestrregex: 'ReplaceStrRegex',
-  startswith: 'StartsWith',
-  substring: 'SubString',
-  titlecase: 'TitleCase',
-  uppercase: 'UpperCase',
 }
 
 /**
@@ -263,6 +249,88 @@ var exprToString = function(expr, caller) {
       exprToString(expr['collection']) +
       ', ' +
       exprToString(expr['foreach']) +
+      ')'
+    )
+  }
+
+  if ('collections' in expr) {
+    if (expr['collections'] === null) {
+      return 'Collections()'
+    }
+  }
+
+  if ('databases' in expr) {
+    if (expr['databases'] === null) {
+      return 'Databases()'
+    }
+  }
+
+  if ('functions' in expr) {
+    if (expr['functions'] === null) {
+      return 'Functions()'
+    }
+  }
+
+  if ('indexes' in expr) {
+    if (expr['indexes'] === null) {
+      return 'Indexes()'
+    }
+  }
+
+  if ('roles' in expr) {
+    if (expr['roles'] === null) {
+      return 'Roles()'
+    }
+  }
+
+  if ('select' in expr) {
+    return (
+      'Select(' +
+      exprToString(expr['select']) +
+      ', ' +
+      exprToString(expr['from']) +
+      ')'
+    )
+  }
+
+  if ('if' in expr) {
+    return (
+      'If(' +
+      exprToString(expr['if']) +
+      ', ' +
+      exprToString(expr['then']) +
+      ', ' +
+      exprToString(expr['else']) +
+      ')'
+    )
+  }
+
+  if ('contains_path' in expr) {
+    return (
+      'ContainsPath(' +
+      exprToString(expr['contains_path']) +
+      ', ' +
+      exprToString(expr['in']) +
+      ')'
+    )
+  }
+
+  if ('contains_field' in expr) {
+    return (
+      'ContainsField(' +
+      exprToString(expr['contains_field']) +
+      ', ' +
+      exprToString(expr['in']) +
+      ')'
+    )
+  }
+
+  if ('contains_value' in expr) {
+    return (
+      'ContainsValue(' +
+      exprToString(expr['contains_value']) +
+      ', ' +
+      exprToString(expr['in']) +
       ')'
     )
   }

@@ -1280,7 +1280,7 @@ function Casefold(string, normalizer) {
  */
 function ContainsStr(value, search) {
   arity.exact(2, arguments, ContainsStr.name)
-  return new Expr({ containsstr: wrap(value), search: wrap(search) })
+  return new Expr({ contains_str: wrap(value), search: wrap(search) })
 }
 
 /**
@@ -1293,7 +1293,7 @@ function ContainsStr(value, search) {
  */
 function ContainsStrRegex(value, pattern) {
   arity.exact(2, arguments, ContainsStrRegex.name)
-  return new Expr({ containsstrregex: wrap(value), pattern: wrap(pattern) })
+  return new Expr({ contains_str_regex: wrap(value), pattern: wrap(pattern) })
 }
 
 /**
@@ -1306,7 +1306,7 @@ function ContainsStrRegex(value, pattern) {
  */
 function StartsWith(value, search) {
   arity.exact(2, arguments, StartsWith.name)
-  return new Expr({ startswith: wrap(value), search: wrap(search) })
+  return new Expr({ starts_with: wrap(value), search: wrap(search) })
 }
 
 /**
@@ -1319,7 +1319,7 @@ function StartsWith(value, search) {
  */
 function EndsWith(value, search) {
   arity.exact(2, arguments, EndsWith.name)
-  return new Expr({ endswith: wrap(value), search: wrap(search) })
+  return new Expr({ ends_with: wrap(value), search: wrap(search) })
 }
 
 /**
@@ -1331,7 +1331,7 @@ function EndsWith(value, search) {
  */
 function RegexEscape(value) {
   arity.exact(1, arguments, RegexEscape.name)
-  return new Expr({ regexescape: wrap(value) })
+  return new Expr({ regex_escape: wrap(value) })
 }
 
 /**
@@ -1346,7 +1346,7 @@ function FindStr(value, find, start) {
   arity.between(2, 3, arguments, FindStr.name)
   start = defaults(start, null)
   return new Expr(
-    params({ findstr: wrap(value), find: wrap(find) }, { start: wrap(start) })
+    params({ find_str: wrap(value), find: wrap(find) }, { start: wrap(start) })
   )
 }
 
@@ -1364,7 +1364,7 @@ function FindStrRegex(value, pattern, start, numResults) {
   start = defaults(start, null)
   return new Expr(
     params(
-      { findstrregex: wrap(value), pattern: wrap(pattern) },
+      { find_str_regex: wrap(value), pattern: wrap(pattern) },
       { start: wrap(start), num_results: wrap(numResults) }
     )
   )
@@ -1389,7 +1389,7 @@ function Length(value) {
  */
 function LowerCase(value) {
   arity.exact(1, arguments, LowerCase.name)
-  return new Expr({ lowercase: wrap(value) })
+  return new Expr({ lower_case: wrap(value) })
 }
 
 /**
@@ -1400,7 +1400,7 @@ function LowerCase(value) {
  */
 function LTrim(value) {
   arity.exact(1, arguments, LTrim.name)
-  return new Expr({ ltrim: wrap(value) })
+  return new Expr({ l_trim: wrap(value) })
 }
 
 /**
@@ -1448,7 +1448,7 @@ function Repeat(value, number) {
 function ReplaceStr(value, find, replace) {
   arity.exact(3, arguments, ReplaceStr.name)
   return new Expr({
-    replacestr: wrap(value),
+    replace_str: wrap(value),
     find: wrap(find),
     replace: wrap(replace),
   })
@@ -1469,7 +1469,7 @@ function ReplaceStrRegex(value, pattern, replace, first) {
   return new Expr(
     params(
       {
-        replacestrregex: wrap(value),
+        replace_str_regex: wrap(value),
         pattern: wrap(pattern),
         replace: wrap(replace),
       },
@@ -1486,7 +1486,7 @@ function ReplaceStrRegex(value, pattern, replace, first) {
  */
 function RTrim(value) {
   arity.exact(1, arguments, RTrim.name)
-  return new Expr({ rtrim: wrap(value) })
+  return new Expr({ r_trim: wrap(value) })
 }
 
 /**
@@ -1513,7 +1513,7 @@ function SubString(value, start, length) {
   length = defaults(length, null)
   return new Expr(
     params(
-      { substring: wrap(value) },
+      { sub_string: wrap(value) },
       { start: wrap(start), length: wrap(length) }
     )
   )
@@ -1527,7 +1527,7 @@ function SubString(value, start, length) {
  */
 function TitleCase(value) {
   arity.exact(1, arguments, TitleCase.name)
-  return new Expr({ titlecase: wrap(value) })
+  return new Expr({ title_case: wrap(value) })
 }
 
 /**
@@ -1549,7 +1549,7 @@ function Trim(value) {
  */
 function UpperCase(value) {
   arity.exact(1, arguments, UpperCase.name)
-  return new Expr({ uppercase: wrap(value) })
+  return new Expr({ upper_case: wrap(value) })
 }
 
 /**
@@ -2096,7 +2096,7 @@ function Add() {
  */
 function BitAnd() {
   arity.min(1, arguments, BitAnd.name)
-  return new Expr({ bitand: wrap(varargs(arguments)) })
+  return new Expr({ bit_and: wrap(varargs(arguments)) })
 }
 
 /**
@@ -2108,7 +2108,7 @@ function BitAnd() {
  */
 function BitNot(expr) {
   arity.exact(1, arguments, BitNot.name)
-  return new Expr({ bitnot: wrap(expr) })
+  return new Expr({ bit_not: wrap(expr) })
 }
 
 /**
@@ -2120,7 +2120,7 @@ function BitNot(expr) {
  */
 function BitOr() {
   arity.min(1, arguments, BitOr.name)
-  return new Expr({ bitor: wrap(varargs(arguments)) })
+  return new Expr({ bit_or: wrap(varargs(arguments)) })
 }
 
 /**
@@ -2132,7 +2132,7 @@ function BitOr() {
  */
 function BitXor() {
   arity.min(1, arguments, BitXor.name)
-  return new Expr({ bitxor: wrap(varargs(arguments)) })
+  return new Expr({ bit_xor: wrap(varargs(arguments)) })
 }
 
 /**

@@ -551,4 +551,368 @@ describe('Values', () => {
       'Query(Lambda("X", Var("X")))'
     )
   })
+
+  test('pretty print despite argument order', () => {
+    // Match
+    assertPrint(
+      new Query({
+        api_version: '3',
+        expr: {
+          match: {
+            index: 'idx',
+          },
+          terms: ['str', 10],
+        },
+        lambda: '_',
+      }),
+      'Query(Lambda("_", Match(Index("idx"), ["str", 10])))'
+    )
+
+    assertPrint(
+      new Query({
+        expr: {
+          terms: 10,
+          match: {
+            index: 'idx',
+          },
+        },
+        api_version: '3',
+        lambda: '_',
+      }),
+      'Query(Lambda("_", Match(Index("idx"), 10)))'
+    )
+
+    // Filter an array
+    assertPrint(
+      new Query({
+        collection: [1, 2, 3],
+        filter: {
+          expr: {
+            equals: [0, { modulo: [{ var: 'i' }, 2] }],
+          },
+          lambda: 'i',
+        },
+      }),
+      'Query(Filter([1, 2, 3], Lambda("i", Equals(0, Modulo(Var("i"), 2)))))'
+    )
+
+    // Filter a page
+    assertPrint(
+      new Query({
+        filter: {
+          lambda: 'i',
+          expr: {
+            contains_str: { select: 'name', from: { get: { var: 'i' } } },
+            search: '-',
+          },
+        },
+        collection: { paginate: { databases: null } },
+      }),
+      'Query(Filter(Paginate(Databases()), Lambda("i", ContainsStr(Select("name", Get(Var("i"))), "-"))))'
+    )
+
+    // Select
+    assertPrint(
+      new Query({
+        from: {
+          object: {
+            favorites: {
+              object: {
+                foods: ['crunchings', 'munchings', 'lunchings'],
+              },
+            },
+          },
+        },
+        select: ['favorites', 'foods', 1],
+      }),
+      'Query(Select(["favorites", "foods", 1], {favorites: {foods: ["crunchings", "munchings", "lunchings"]}}))'
+    )
+
+    // Map an Array
+    assertPrint(
+      new Query({
+        map: { lambda: 'x', expr: { add: [{ var: 'x' }, 1] } },
+        collection: [1, 2, 3],
+      }),
+      'Query(Map([1, 2, 3], Lambda("x", Add(Var("x"), 1))))'
+    )
+
+    // Map a Page
+    new assertPrint(
+      new Query({
+        map: {
+          expr: { get: { var: 'x' } },
+          lambda: 'x',
+        },
+        collection: { paginate: { databases: null } },
+      }),
+      'Query(Map(Paginate(Databases()), Lambda("x", Get(Var("x")))))'
+    )
+
+    // Foreach
+    assertPrint(
+      new Query({
+        collection: { paginate: { documents: { collection: 'orders' } } },
+        foreach: {
+          lambda: 'doc',
+          expr: {
+            update: { var: 'doc' },
+            params: { object: { data: { object: { createdBy: 'Ryan' } } } },
+          },
+        },
+      }),
+      `Query(Foreach(Paginate(Documents(Collection("orders"))), Lambda("doc", Update(Var("doc"), {data: {createdBy: "Ryan"}}))))`
+    )
+
+    // If
+    assertPrint(
+      new Query({
+        else: 'was false',
+        then: 'was true',
+        if: true,
+      }),
+      `Query(If(true, "was true", "was false"))`
+    )
+
+    // Call
+    assertPrint(
+      new Query({
+        arguments: 2,
+        call: {
+          function: 'double',
+        },
+      }),
+      `Query(Call(Function("double"), 2))`
+    )
+
+    assertPrint(
+      new Query({
+        arguments: [1, 2, 3],
+        call: {
+          function: 'double',
+        },
+      }),
+      `Query(Call(Function("double"), [1, 2, 3]))`
+    )
+
+    assertPrint(
+      new Query({
+        arguments: {
+          object: {
+            one: 1,
+            two: 2,
+            three: 3,
+          },
+        },
+        call: {
+          function: 'double',
+        },
+      }),
+      `Query(Call(Function("double"), {one: 1, two: 2, three: 3}))`
+    )
+
+    // Databases
+    assertPrint(
+      new Query({
+        databases: {
+          database: 'lettuce',
+        },
+      }),
+      'Query(Databases(Database("lettuce")))'
+    )
+
+    assertPrint(
+      new Query({
+        databases: null,
+      }),
+      'Query(Databases())'
+    )
+
+    // Collections
+    assertPrint(
+      new Query({
+        collections: {
+          database: 'lettuce',
+        },
+      }),
+      'Query(Collections(Database("lettuce")))'
+    )
+
+    assertPrint(
+      new Query({
+        collections: null,
+      }),
+      'Query(Collections())'
+    )
+
+    // Documents
+    assertPrint(
+      new Query({
+        documents: {
+          collection: 'lettuce',
+        },
+      }),
+      'Query(Documents(Collection("lettuce")))'
+    )
+
+    assertPrint(
+      new Query({
+        documents: null,
+      }),
+      'Query(Documents(null))'
+    )
+
+    // API v3 Contains* functions
+    assertPrint(
+      new Query({
+        in: { object: { a: { object: { b: 1 } } } },
+        contains_path: ['a', 'b'],
+      }),
+      'Query(ContainsPath(["a", "b"], {a: {b: 1}}))'
+    )
+
+    assertPrint(
+      new Query({
+        in: { object: { a: { object: { b: 1 } } } },
+        contains_field: ['a', 'b'],
+      }),
+      'Query(ContainsField(["a", "b"], {a: {b: 1}}))'
+    )
+
+    assertPrint(
+      new Query({
+        in: { object: { a: { object: { b: 1 } } } },
+        contains_value: ['a', 'b'],
+      }),
+      'Query(ContainsValue(["a", "b"], {a: {b: 1}}))'
+    )
+
+    assertPrint(
+      new Query({
+        let: {
+          three: { add: [{ var: 'two' }, 1] },
+          two: { add: [{ var: 'one' }, 1] },
+          one: { add: [0, 1] },
+        },
+        in: { var: 'three' },
+      }),
+      'Query(Let({three: Add(Var("two"), 1), two: Add(Var("one"), 1), one: Add(0, 1)}, Var("three")))'
+    )
+
+    assertPrint(
+      new Query({
+        lambda: 'x',
+        expr: {
+          let: [{ y: { var: 'x' } }],
+          in: { add: [1, { var: 'y' }] },
+        },
+      }),
+      'Query(Lambda("x", Let([{y: Var("x")}], Add(1, Var("y")))))'
+    )
+  })
+
+  test('test non-snake cased functions', () => {
+    assertPrint(
+      new Query({
+        regex_escape: '.Fa*[un]a{1,}',
+      }),
+      'Query(RegexEscape(".Fa*[un]a{1,}"))'
+    )
+
+    assertPrint(
+      new Query({
+        starts_with: 'Fauna',
+        search: 'F',
+      }),
+      'Query(StartsWith("Fauna", "F"))'
+    )
+
+    assertPrint(
+      new Query({
+        ends_with: 'Fauna',
+        search: 'a',
+      }),
+      'Query(EndsWith("Fauna", "a"))'
+    )
+
+    assertPrint(
+      new Query({
+        contains_str: 'Fauna',
+        search: 'una',
+      }),
+      'Query(ContainsStr("Fauna", "una"))'
+    )
+
+    assertPrint(
+      new Query({
+        contains_str_regex: 'Fauna',
+        pattern: '(Fa|na)',
+      }),
+      'Query(ContainsStrRegex("Fauna", "(Fa|na)"))'
+    )
+
+    assertPrint(
+      new Query({
+        find_str: 'fire and fireman',
+        find: 'fire',
+      }),
+      'Query(FindStr("fire and fireman", "fire"))'
+    )
+
+    assertPrint(
+      new Query({ find_str_regex: 'fire and Fireman', pattern: '[Ff]ire' }),
+      'Query(FindStrRegex("fire and Fireman", "[Ff]ire"))'
+    )
+
+    assertPrint(
+      new Query({ lower_case: 'Fire And FireMan' }),
+      'Query(LowerCase("Fire And FireMan"))'
+    )
+
+    assertPrint(new Query({ l_trim: ' Fire' }), 'Query(LTrim(" Fire"))')
+
+    assertPrint(
+      new Query({
+        replace_str: 'One Fish Two Fish',
+        find: 'Two',
+        replace: 'Blue',
+      }),
+      'Query(ReplaceStr("One Fish Two Fish", "Two", "Blue"))'
+    )
+
+    assertPrint(
+      new Query({
+        replace_str_regex: 'One Fisk Two FisT',
+        pattern: 'Fis.',
+        replace: 'Fish',
+        first: true,
+      }),
+      'Query(ReplaceStrRegex("One Fisk Two FisT", "Fis.", "Fish", true))'
+    )
+
+    assertPrint(new Query({ r_trim: 'Fire  ' }), 'Query(RTrim("Fire  "))')
+
+    assertPrint(
+      new Query({ sub_string: 'ABCDEFGHIJK', start: 2, length: 3 }),
+      'Query(SubString("ABCDEFGHIJK", 2, 3))'
+    )
+
+    assertPrint(
+      new Query({ title_case: 'FIRE And FireMan' }),
+      'Query(TitleCase("FIRE And FireMan"))'
+    )
+
+    assertPrint(
+      new Query({ upper_case: 'Fire And FireMan' }),
+      'Query(UpperCase("Fire And FireMan"))'
+    )
+
+    assertPrint(new Query({ bit_and: [0, 0] }), 'Query(BitAnd(0, 0))')
+
+    assertPrint(new Query({ bit_not: 7 }), 'Query(BitNot(7))')
+
+    assertPrint(new Query({ bit_or: [0, 0] }), 'Query(BitOr(0, 0))')
+
+    assertPrint(new Query({ bit_xor: [0, 0] }), 'Query(BitXor(0, 0))')
+  })
 })
