@@ -10,3 +10,4 @@ export * from './src/types/values';
 export * from './src/types/PageHelper';
 export * from './src/types/query';
 export * from './src/types/RequestResult';
+export * from './src/types/json';
