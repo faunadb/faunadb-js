@@ -1,11 +1,10 @@
 'use strict'
 
 var util = require('util')
-var errors = require('../src/errors')
-var json = require('../src/_json')
-var Expr = require('../src/Expr')
-var values = require('../src/values')
-var q = require('../src/query')
+import Expr from '../src/Expr'
+import * as q from '../src/query'
+import * as values from '../src/values'
+import * as json from '../src/_json'
 
 var FaunaDate = values.FaunaDate,
   FaunaTime = values.FaunaTime,
@@ -358,28 +357,28 @@ describe('Values', () => {
 
   test('pretty print Match', () => {
     assertPrint(
-      new Query(q.Lambda('_', q.Match(q.Index('idx')))),
+      new Query(q.Lambda('_', q.Match(q.FaunaIndex('idx')))),
       'Query(Lambda("_", Match(Index("idx"))))'
     )
 
     assertPrint(
-      new Query(q.Lambda('_', q.Match(q.Index('idx'), 'str'))),
+      new Query(q.Lambda('_', q.Match(q.FaunaIndex('idx'), 'str'))),
       'Query(Lambda("_", Match(Index("idx"), "str")))'
     )
 
     assertPrint(
-      new Query(q.Lambda('_', q.Match(q.Index('idx'), 'str', 10))),
+      new Query(q.Lambda('_', q.Match(q.FaunaIndex('idx'), 'str', 10))),
       'Query(Lambda("_", Match(Index("idx"), ["str", 10])))'
     )
 
     assertPrint(
-      new Query(q.Lambda('_', q.Match(q.Index('idx'), ['str', 10]))),
+      new Query(q.Lambda('_', q.Match(q.FaunaIndex('idx'), ['str', 10]))),
       'Query(Lambda("_", Match(Index("idx"), ["str", 10])))'
     )
   })
 
   test('pretty print Paginate', () => {
-    var m = q.Match(q.Index('idx'))
+    var m = q.Match(q.FaunaIndex('idx'))
 
     assertPrint(
       new Query(q.Lambda('_', q.Paginate(m))),
@@ -625,10 +624,10 @@ describe('Values', () => {
       new Query(
         q.Join(
           q.Match(
-            q.Index('spellbooks_by_owner'),
+            q.FaunaIndex('spellbooks_by_owner'),
             q.Ref(q.Collection('characters'), '181388642114077184')
           ),
-          q.Index('spells_by_spellbook')
+          q.FaunaIndex('spells_by_spellbook')
         )
       ),
       'Query(Join(Match(Index("spellbooks_by_owner"), Ref(Collection("characters"), "181388642114077184")), Index("spells_by_spellbook")))'
@@ -637,12 +636,12 @@ describe('Values', () => {
       new Query(
         q.Join(
           q.Match(
-            q.Index('spellbooks_by_owner'),
+            q.FaunaIndex('spellbooks_by_owner'),
             q.Ref(q.Collection('characters'), '181388642114077184')
           ),
           q.Lambda(
             'spellbook',
-            q.Match(q.Index('spells_by_spellbook'), q.Var('spellbook'))
+            q.Match(q.FaunaIndex('spells_by_spellbook'), q.Var('spellbook'))
           )
         )
       ),

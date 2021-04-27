@@ -11,13 +11,13 @@
 // visibility control. However, DO NOT change any internal state from outside of
 // its context as it'd most certainly lead to errors.
 
-require('abort-controller/polyfill')
-var RequestResult = require('./RequestResult')
-var errors = require('./errors')
-var json = require('./_json')
-var http = require('./_http')
-var q = require('./query')
-var util = require('./_util')
+import 'abort-controller/polyfill'
+import { AbortError, StreamErrorEvent } from './errors'
+import { wrap } from './query/common'
+import Get from './query/Get'
+import RequestResult from './RequestResult'
+import { parseJSON, parseJSONStreaming } from './_json'
+import { applyDefaults } from './_util'
 
 var DefaultEvents = ['start', 'error', 'version', 'history_rewrite']
 var DocumentStreamEvents = DefaultEvents.concat(['snapshot'])
@@ -34,13 +34,13 @@ var DocumentStreamEvents = DefaultEvents.concat(['snapshot'])
  * @private
  */
 function StreamClient(client, expression, options, onEvent) {
-  options = util.applyDefaults(options, {
+  options = applyDefaults(options, {
     fields: null,
   })
 
   this._client = client
   this._onEvent = onEvent
-  this._query = q.wrap(expression)
+  this._query = wrap(expression)
   this._urlParams = options.fields ? { fields: options.fields.join(',') } : null
   this._abort = new AbortController()
   this._state = 'idle'
@@ -53,7 +53,7 @@ function StreamClient(client, expression, options, onEvent) {
 StreamClient.prototype.snapshot = function() {
   var self = this
   self._client
-    .query(q.Get(self._query))
+    .query(Get(self._query))
     .then(function(doc) {
       self._onEvent({
         type: 'snapshot',
@@ -90,7 +90,7 @@ StreamClient.prototype.subscribe = function() {
     var parsed
 
     try {
-      parsed = json.parseJSON(response.body)
+      parsed = parseJSON(response.body)
     } catch (_) {
       parsed = response.body
     }
@@ -113,7 +113,7 @@ StreamClient.prototype.subscribe = function() {
   }
 
   function onData(data) {
-    var result = json.parseJSONStreaming(buffer + data)
+    var result = parseJSONStreaming(buffer + data)
 
     buffer = result.buffer
 
@@ -123,7 +123,7 @@ StreamClient.prototype.subscribe = function() {
       }
 
       if (event.event === 'error') {
-        onError(new errors.StreamErrorEvent(event))
+        onError(new StreamErrorEvent(event))
       } else {
         self._onEvent(event)
       }
@@ -133,7 +133,7 @@ StreamClient.prototype.subscribe = function() {
   function onError(error) {
     // AbortError is triggered as result of calling
     // close() on a Subscription. There's no need to relay this event back up.
-    if (error instanceof http.AbortError) {
+    if (error instanceof AbortError) {
       return
     }
 
@@ -354,7 +354,7 @@ Subscription.prototype.close = function() {
  * use stream's public interface.
  * @private
  */
-function StreamAPI(client) {
+export function StreamApi({ client }) {
   var api = function(expression, options) {
     var dispatcher = new EventDispatcher(DefaultEvents)
     var streamClient = new StreamClient(client, expression, options, function(
@@ -408,8 +408,4 @@ function StreamAPI(client) {
   }
 
   return api
-}
-
-module.exports = {
-  StreamAPI: StreamAPI,
 }

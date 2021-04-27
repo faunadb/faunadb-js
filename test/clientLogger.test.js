@@ -1,9 +1,8 @@
 'use strict'
 
-var logger = require('../src/clientLogger').logger
-var query = require('../src/query')
-var objectAssign = require('object-assign')
-var util = require('./util')
+import { logger } from '../src/clientLogger'
+import * as query from '../src/query'
+import * as util from './util'
 
 var client
 var collectionRef
@@ -88,7 +87,7 @@ function captureLogged(clientAction, clientParams) {
 
   var logged
   var loggedClient = util.getClient(
-    objectAssign(
+    Object.assign(
       {
         observer: logger(function(str, client) {
           logged = str

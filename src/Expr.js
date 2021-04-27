@@ -1,6 +1,6 @@
 'use strict'
 
-var util = require('./_util')
+import { checkInstanceHasProperty } from './_util'
 
 /**
  * A representation of a FaunaDB Query Expression. Generally, you shouldn't need
@@ -9,7 +9,7 @@ var util = require('./_util')
  * @param {Object} obj The object that represents a Query to be treated as an Expression.
  * @constructor
  */
-function Expr(obj) {
+export default function Expr(obj) {
   this.raw = obj
 }
 
@@ -86,7 +86,7 @@ var specialCases = {
 function isExpr(expression) {
   return (
     expression instanceof Expr ||
-    util.checkInstanceHasProperty(expression, '_isFaunaExpr')
+    checkInstanceHasProperty(expression, '_isFaunaExpr')
   )
 }
 
@@ -305,5 +305,3 @@ var exprToString = function(expr, caller) {
 }
 
 Expr.toString = exprToString
-
-module.exports = Expr

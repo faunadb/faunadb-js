@@ -72,14 +72,13 @@ To get up and running quickly, below is a full example for connecting from the b
 <script src="https://cdn.jsdelivr.net/npm/faunadb@latest/dist/faunadb.js"></script>
 <script type="text/javascript">
   var faunadb = window.faunadb
-  var q = faunadb.query
   var client = new faunadb.Client({
     secret: 'your_key_here',
     domain: 'db.fauna.com',
     scheme: 'https',
   })
   client.query(
-    q.ToDate('2018-06-06')
+    faunadb.query.ToDate('2018-06-06')
   )
   .then(function (res) { console.log('Result:', res) })
   .catch(function (err) { console.log('Error:', err) })
@@ -91,10 +90,10 @@ To get up and running quickly, below is a full example for connecting from the b
 
 ```javascript
 var faunadb = require('faunadb'),
-  q = faunadb.query
+var query = require('faunadb/query)
 ```
 
-This is the recommended require stanza. The `faunadb.query` module contains all
+The `faunadb/query` module contains all
 of the functions to create FaunaDB Query expressions.
 
 #### Instantiating a Client and Issuing Queries
@@ -126,6 +125,139 @@ createP.then(function(response) {
 `response` is a JSON object containing the FaunaDB response. See the JSDocs for
 `faunadb.Client`.
 
+#### ES6 modules
+
+This is recommended way to inject faunadb-js. Many build tools supports three shaking which relies on the static structure of ES6 module syntax, i.e. `import` and `export`.
+
+```
+import { Client } from 'faunadb'
+import { Now } from 'faunadb/query'
+
+const client =new Client({secret: 'your_key_here'})
+client.query(Now()).then(console.info)
+```
+
+Import all query functions in one line
+
+```
+import * as q from 'faunadb/query'
+```
+
+Deep imports. This is the recommended way to import query functions as modern bundle tools would tree-shake package and include only used functions.
+
+```
+import Select from 'faunadb/query/Select'
+import Var from 'faunadb/query/Var'
+```
+
+#### Migration guide from 4.X.X to 5.X.X
+
+##### Overview
+
+faunadb-js from version 5.X.X support EcmaScript modules system which brings availability for bundle tools like webpack, rollup execute three-shake package and remove unused code, therefore bundle size would be smaller. In additional to that, 5.X.X also has some breaking changes
+
+##### Use queryTimeout in flavor of timeout
+
+`timeout` option for `new Client` and `client.query` has been removed. use `queryTimeout`
+
+##### Faunadb imports (TBD if this have to be public API)
+
+```diff
+const faunadb = require('faunadb')
+- const { Ref, FaunaDate, Bytes, ... } = faunadb.values
++ const { Ref, FaunaDate, Bytes, ... } = faunadb
+
+- const { InvalidArity, FaunaHTTPError, BadRequest, ... } = faunadb.errors
++ const { InvalidArity, FaunaHTTPError, BadRequest, ... } = faunadb
+
+- const { logger, showRequestResult } = faunadb.clientLogger
++ const { logger, showRequestResult } = faunadb
+
+```
+
+##### Import query functions
+
+All query functions has been removed from main package and hosted under sub-module `faunadb/query`.
+
+CommonJS
+
+```diff
+const faunadb = require('faunadb');
+-const q = faunadb.query;
++const q = require('faunadb/query');
+```
+
+EcmaScript
+
+```javascript
+import { Client } from 'faunadb'
+
+// Import all queries by one command
+import * as q from 'faunadb/query'
+
+// Named imports
+import { Select, Var } from 'faunadb/query'
+
+// Deep imports
+import Select from 'faunadb/query/Select'
+import Var from 'faunadb/query/Var'
+```
+
+Although most modern bundle tools are able to tree-shake package with named imports, we recommend to use deep imports.
+
+##### Renamed queries
+
+Due to restriction of JS reserved words some queries has been renamed
+
+```diff
+client.query(
+-  Get(Function('increment'))
++  Get(FaunaFunction('increment'))
+)
+.then((ret) => console.log(ret))
+.catch((err) => console.error('Error: %s', err))
+```
+
+```diff
+client.query(
+-  Paginate(Match(Index('name'))),
++  Paginate(Match(FaunaIndex('name'))),
+)
+.then((ret) => console.log(ret))
+.catch((err) => console.error('Error: %s', err))
+```
+
+##### Streaming API
+
+```diff
+const faunadb = require('faunadb')
+const q = require('faunadb/query')
++ const Stream = require('faunadb/stream')
+const client = new faunadb.Client({secret: 'YOUR_FAUNA_SECRET'})
++ const streamApi = new StreamApi({ client })
+const docRef = q.Ref(q.Collection('Scores'), '1')
+
+let stream
+const startStream = () => {
+-  stream = client.stream.document(docRef)
++  stream = streamApi.document(docRef)
+  .on('snapshot', snapshot => {
+    report(snapshot)
+  })
+  .on('version', version => {
+    report(version)
+  })
+  .on('error', error => {
+    console.log('Error:', error)
+    stream.close()
+    setTimeout(startStream, 1000)
+  })
+  .start()
+}
+
+startStream()
+```
+
 #### Pagination Helpers
 
 This driver contains helpers to provide a simpler API for consuming paged
@@ -137,7 +269,9 @@ Using the helper to page over sets lets the driver handle cursoring and
 pagination state. For example, `client.paginate`:
 
 ```javascript
-var helper = client.paginate(q.Match(q.Index('test_index'), 'example-term'))
+var helper = client.paginate(
+  q.Match(q.FaunaIndex('test_index'), 'example-term')
+)
 ```
 
 The return value, `helper`, is an instance of `PageHelper`. The `each` method will execute a
@@ -172,21 +306,7 @@ more information on the pagination helper.
 
 #### Timeouts
 
-The client can be configured to handle timeouts in two different ways:
-
-1. Add a `timeout` field to the `options` block when instantiating the client
-2. By setting a `queryTimeout` on the client (or passing the value to the client's `.query()` method directly)
-
-The first option (i.e. `timeout`) represents a HTTP timeout on the client side. Defined in seconds, the client will wait the specified period before timing out if it has yet to receive a response.
-
-```javascript
-const client = new faunadb.Client({
-  secret: 'YOUR_FAUNADB_SECRET',
-  timeout: 100,
-})
-```
-
-On the other hand, using the client's `queryTimeout` dictates how long FaunaDB will process the request on the server before timing out if it hasn't finished running the operation. This can be done in two different ways:
+The client can be configured to handle timeout setting a `queryTimeout` on the client (or passing the value to the client's `.query()` method directly). UqueryTimeout: nusing the client's `queryTimeout` dictates how long FaunaDB will process the request on the server before timing out if it hasn't finished running the operation. This can be done in two different ways:
 
 ```javascript
 // 1. Setting the value when instantiating a new client
@@ -216,7 +336,7 @@ var createP = client.query(
 
 ```javascript
 var helper = client.paginate(
-  q.Match(q.Index('test_index'), 'example-term'),
+  q.Match(q.FaunaIndex('test_index'), 'example-term'),
   null,
   {
     secret: 'YOUR_FAUNADB_SECRET',

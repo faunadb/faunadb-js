@@ -33,7 +33,7 @@ commands:
 
       - restore_cache:
           keys:
-            - v1-deps-<<parameters.node_version>>-{{ checksum "yarn.lock" }}
+            - v1-deps-<<parameters.node_version>>-{{ checksum "package-lock.json" }}
 
       - run:
           name: Install dependencies
@@ -42,7 +42,7 @@ commands:
       - save_cache:
           paths:
             - node_modules
-          key: v1-deps-<<parameters.node_version>>-{{ checksum "yarn.lock" }}
+          key: v1-deps-<<parameters.node_version>>-{{ checksum "package-lock.json" }}
 
       - run:
           name: Wait FaunaDB init
@@ -50,8 +50,8 @@ commands:
             while ! $(curl --output /dev/null --silent --fail --max-time 1 http://core:8443/ping); do sleep 1; done
 
       - run:
-          name: Test webpack build
-          command: npm run wp
+          name: Build package
+          command: npm run build:package
 
       - run:
           name: Run Tests

@@ -1,14 +1,14 @@
 'use strict'
 
-var base64 = require('base64-js')
-var deprecate = require('util-deprecate')
-var errors = require('./errors')
-var Expr = require('./Expr')
-var util = require('./_util')
-var nodeUtil = util.isNodeEnv() ? require('util') : null
+import * as base64 from 'base64-js'
+import { inspect } from 'util'
+import deprecate from 'util-deprecate'
+import { InvalidValue } from './errors'
+import Expr from './Expr'
+import { checkInstanceHasProperty, inherits } from './_util'
 
-var customInspect = nodeUtil && nodeUtil.inspect.custom
-var stringify = nodeUtil ? nodeUtil.inspect : JSON.stringify
+const customInspect = inspect && inspect.custom
+const stringify = inspect ? inspect : JSON.stringify
 
 /**
  * FaunaDB value types. Generally, these collections do not need to be instantiated
@@ -32,11 +32,11 @@ var stringify = nodeUtil ? nodeUtil.inspect : JSON.stringify
  * @abstract
  * @constructor
  */
-function Value() {}
+export function Value() {}
 
 Value.prototype._isFaunaValue = true
 
-util.inherits(Value, Expr)
+inherits(Value, Expr)
 
 /**
  * FaunaDB ref.
@@ -52,8 +52,8 @@ util.inherits(Value, Expr)
  * @extends module:values~Value
  * @constructor
  */
-function Ref(id, collection, database) {
-  if (!id) throw new errors.InvalidValue('id cannot be null or undefined')
+export function Ref(id, collection, database) {
+  if (!id) throw new InvalidValue('id cannot be null or undefined')
 
   this.value = { id: id }
   if (collection) this.value['collection'] = collection
@@ -62,7 +62,7 @@ function Ref(id, collection, database) {
 
 Ref.prototype._isFaunaRef = true
 
-util.inherits(Ref, Value)
+inherits(Ref, Value)
 
 /**
  * Gets the collection part out of the Ref.
@@ -167,8 +167,7 @@ Ref.prototype.valueOf = function() {
  */
 Ref.prototype.equals = function(other) {
   return (
-    (other instanceof Ref ||
-      util.checkInstanceHasProperty(other, '_isFaunaRef')) &&
+    (other instanceof Ref || checkInstanceHasProperty(other, '_isFaunaRef')) &&
     this.id === other.id &&
     ((this.collection === undefined && other.collection === undefined) ||
       this.collection.equals(other.collection)) &&
@@ -177,7 +176,7 @@ Ref.prototype.equals = function(other) {
   )
 }
 
-var Native = {
+export var Native = {
   COLLECTIONS: new Ref('collections'),
   INDEXES: new Ref('indexes'),
   DATABASES: new Ref('databases'),
@@ -217,12 +216,12 @@ Native.fromName = function(name) {
  * @extends module:values~Value
  * @constructor
  */
-function SetRef(value) {
+export function SetRef(value) {
   /** Raw query object. */
   this.value = value
 }
 
-util.inherits(SetRef, Value)
+inherits(SetRef, Value)
 
 wrapToString(SetRef, function() {
   return Expr.toString(this.value)
@@ -239,17 +238,17 @@ SetRef.prototype.toJSON = function() {
  * @extends module:values~Value
  * @constructor
  */
-function FaunaTime(value) {
+export function FaunaTime(value) {
   if (value instanceof Date) {
     value = value.toISOString()
   } else if (!(value.charAt(value.length - 1) === 'Z')) {
-    throw new errors.InvalidValue("Only allowed timezone is 'Z', got: " + value)
+    throw new InvalidValue("Only allowed timezone is 'Z', got: " + value)
   }
 
   this.value = value
 }
 
-util.inherits(FaunaTime, Value)
+inherits(FaunaTime, Value)
 
 /**
  * Returns the date wrapped by this object.
@@ -280,7 +279,7 @@ FaunaTime.prototype.toJSON = function() {
  * @extends module:values~Value
  * @constructor
  */
-function FaunaDate(value) {
+export function FaunaDate(value) {
   if (value instanceof Date) {
     // The first 10 characters 'YYYY-MM-DD' are the date portion.
     value = value.toISOString().slice(0, 10)
@@ -293,7 +292,7 @@ function FaunaDate(value) {
   this.value = value
 }
 
-util.inherits(FaunaDate, Value)
+inherits(FaunaDate, Value)
 
 /**
  * @member {Date}
@@ -322,7 +321,7 @@ FaunaDate.prototype.toJSON = function() {
  * @extends module:values~Value
  * @constructor
  */
-function Bytes(value) {
+export function Bytes(value) {
   if (value instanceof ArrayBuffer) {
     this.value = new Uint8Array(value)
   } else if (typeof value === 'string') {
@@ -330,14 +329,14 @@ function Bytes(value) {
   } else if (value instanceof Uint8Array) {
     this.value = value
   } else {
-    throw new errors.InvalidValue(
+    throw new InvalidValue(
       'Bytes type expect argument to be either Uint8Array|ArrayBuffer|string, got: ' +
         stringify(value)
     )
   }
 }
 
-util.inherits(Bytes, Value)
+inherits(Bytes, Value)
 
 wrapToString(Bytes, function() {
   return 'Bytes("' + base64.fromByteArray(this.value) + '")'
@@ -354,11 +353,11 @@ Bytes.prototype.toJSON = function() {
  * @extends module:values~Value
  * @constructor
  */
-function Query(value) {
+export function Query(value) {
   this.value = value
 }
 
-util.inherits(Query, Value)
+inherits(Query, Value)
 
 wrapToString(Query, function() {
   return 'Query(' + Expr.toString(this.value) + ')'
@@ -377,15 +376,4 @@ function wrapToString(type, fn) {
   if (customInspect) {
     type.prototype[customInspect] = fn
   }
-}
-
-module.exports = {
-  Value: Value,
-  Ref: Ref,
-  Native: Native,
-  SetRef: SetRef,
-  FaunaTime: FaunaTime,
-  FaunaDate: FaunaDate,
-  Bytes: Bytes,
-  Query: Query,
 }

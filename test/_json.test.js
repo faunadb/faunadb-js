@@ -1,4 +1,4 @@
-const { parseJSONStreaming } = require('../src/_json')
+import { parseJSONStreaming } from '../src/_json'
 
 describe('parseJSONStreaming', () => {
   test('parse non-delimited JSON objects', () => {

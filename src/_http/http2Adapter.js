@@ -1,7 +1,7 @@
 'use strict'
-var http2 = require('http2')
-var errors = require('./errors')
-var util = require('../_util')
+import http2 from 'http2'
+import { AbortError, TimeoutError } from '../errors'
+import { querystringify } from '../_util'
 
 var STREAM_PREFIX = 'stream::'
 
@@ -14,7 +14,7 @@ var STREAM_PREFIX = 'stream::'
  * an HTTP2 session may live when there's no activity.
  * @private
  */
-function Http2Adapter(options) {
+export default function Http2Adapter(options) {
   /**
    * Identifies a type of adapter.
    *
@@ -136,7 +136,7 @@ Http2Adapter.prototype._cleanupSessionFor = function(origin, isStreaming) {
  * @param {?string} options.body Request body utf8 string.
  * @params {?object} options.streamConsumer Stream consumer.
  * @param {?object} options.signal Abort signal object.
- * @param {?number} options.timeout Request timeout.
+ * @param {?number} options.queryTimeout Request timeout.
  * @returns {Promise} Request result.
  */
 Http2Adapter.prototype.execute = function(options) {
@@ -181,14 +181,14 @@ Http2Adapter.prototype.execute = function(options) {
       isCanceled = true
       onSettled()
       request.close(http2.constants.NGHTTP2_CANCEL)
-      rejectOrOnError(new errors.AbortError())
+      rejectOrOnError(new AbortError())
     }
 
     var onTimeout = function() {
       isCanceled = true
       onSettled()
       request.close(http2.constants.NGHTTP2_CANCEL)
-      rejectOrOnError(new errors.TimeoutError())
+      rejectOrOnError(new TimeoutError())
     }
 
     var onResponse = function(responseHeaders) {
@@ -241,7 +241,7 @@ Http2Adapter.prototype.execute = function(options) {
     try {
       var pathname =
         (options.path[0] === '/' ? options.path : '/' + options.path) +
-        util.querystringify(options.query, '?')
+        querystringify(options.query, '?')
       var requestHeaders = Object.assign({}, options.headers, {
         [http2.constants.HTTP2_HEADER_PATH]: pathname,
         [http2.constants.HTTP2_HEADER_METHOD]: options.method,
@@ -259,8 +259,8 @@ Http2Adapter.prototype.execute = function(options) {
       sessionInterface.onRequestStart()
 
       // Set up timeout only if no signal provided.
-      if (!options.signal && options.timeout) {
-        request.setTimeout(options.timeout, onTimeout)
+      if (!options.signal && options.queryTimeout) {
+        request.setTimeout(options.queryTimeout, onTimeout)
       }
 
       if (options.signal) {
@@ -278,5 +278,3 @@ Http2Adapter.prototype.execute = function(options) {
     }
   })
 }
-
-module.exports = Http2Adapter

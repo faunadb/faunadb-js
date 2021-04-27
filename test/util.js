@@ -1,13 +1,11 @@
 'use strict'
-
-require('dotenv').config()
-
-var Client = require('../src/Client')
-var Expr = require('../src/Expr')
-var values = require('../src/values')
-var query = require('../src/query')
-var objectAssign = require('object-assign')
-var util = require('../src/_util')
+import dotenv from 'dotenv'
+import Client from '../src/Client'
+import Expr from '../src/Expr'
+import * as query from '../src/query'
+import * as values from '../src/values'
+import * as util from '../src/_util'
+dotenv.config()
 
 var Database = query.Database
 var Value = values.Value
@@ -61,7 +59,7 @@ function getCfg() {
 }
 
 function getClient(opts) {
-  return new Client(objectAssign({ secret: clientSecret }, getCfg(), opts))
+  return new Client(Object.assign({ secret: clientSecret }, getCfg(), opts))
 }
 
 function assertRejected(promise, errorType) {

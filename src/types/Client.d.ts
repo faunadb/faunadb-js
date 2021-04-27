@@ -6,8 +6,6 @@ import { ExprArg } from './query'
 import RequestResult from './RequestResult'
 import { Subscription } from './Stream'
 
-type StreamEventFields = ['action', 'document', 'diff', 'prev']
-
 export interface ClientConfig {
   secret: string
   domain?: string
@@ -29,21 +27,9 @@ export interface QueryOptions
     Pick<ClientConfig, 'secret' | 'queryTimeout' | 'fetch' | 'observer'>
   > {}
 
-type StreamFn = (
-  expr: Expr,
-  options?: {
-    fields?: StreamEventFields[]
-  }
-) => Subscription
-
-interface StreamApi extends StreamFn {
-  document: StreamFn
-}
-
 export default class Client {
   constructor(opts?: ClientConfig)
   query<T = object>(expr: ExprArg, options?: QueryOptions): Promise<T>
   paginate(expr: Expr, params?: object, options?: QueryOptions): PageHelper
   ping(scope?: string, timeout?: number): Promise<string>
-  stream: StreamApi
 }

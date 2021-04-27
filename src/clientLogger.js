@@ -1,6 +1,6 @@
 'use strict'
 
-var json = require('./_json')
+import { toJSON } from './_json'
 
 /**
  * Functions to assist with debug logging.
@@ -50,7 +50,7 @@ var json = require('./_json')
  * })
  * client.ping() // Logs the request and response.
  */
-function logger(loggerFunction) {
+export function logger(loggerFunction) {
   return function(requestResult, client) {
     return loggerFunction(showRequestResult(requestResult), client)
   }
@@ -62,7 +62,7 @@ function logger(loggerFunction) {
  * @param {RequestResult} requestResult
  * @returns {string} string to be logged.
  */
-function showRequestResult(requestResult) {
+export function showRequestResult(requestResult) {
   var query = requestResult.query,
     method = requestResult.method,
     path = requestResult.path,
@@ -95,7 +95,7 @@ function _indent(str) {
 }
 
 function _showJSON(object) {
-  return _indent(json.toJSON(object, true))
+  return _indent(toJSON(object, true))
 }
 
 function _queryString(query) {
@@ -112,9 +112,4 @@ function _queryString(query) {
     return key + '=' + query[key]
   })
   return '?' + pairs.join('&')
-}
-
-module.exports = {
-  logger: logger,
-  showRequestResult: showRequestResult,
 }

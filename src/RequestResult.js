@@ -28,7 +28,7 @@
  *   The time the response was received by the client.
  * @constructor
  */
-function RequestResult(
+export default function RequestResult(
   method,
   path,
   query,
@@ -92,5 +92,3 @@ Object.defineProperty(RequestResult.prototype, 'timeTaken', {
     return this.endTime - this.startTime
   },
 })
-
-module.exports = RequestResult

@@ -1,8 +1,10 @@
 'use strict'
-require('abort-controller/polyfill')
-var util = require('../_util')
-var faunaErrors = require('../errors')
-var errors = require('./errors')
+import 'abort-controller/polyfill'
+import crossFetch from 'cross-fetch'
+import http from 'http'
+import https from 'https'
+import { AbortError, StreamsNotSupported, TimeoutError } from '../errors'
+import { formatUrl, isNodeEnv } from '../_util'
 
 /**
  * Http client adapter built around fetch API.
@@ -14,7 +16,7 @@ var errors = require('./errors')
  * @param {?function} options.fetch Fetch compatible API.
  * @private
  */
-function FetchAdapter(options) {
+export default function FetchAdapter(options) {
   options = options || {}
 
   /**
@@ -25,11 +27,10 @@ function FetchAdapter(options) {
   this.type = 'fetch'
   this._fetch = resolveFetch(options.fetch)
 
-  if (util.isNodeEnv() && options.keepAlive) {
-    this._keepAliveEnabledAgent = new (options.isHttps
-      ? require('https')
-      : require('http')
-    ).Agent({ keepAlive: true })
+  if (isNodeEnv() && options.keepAlive) {
+    this._keepAliveEnabledAgent = new (options.isHttps ? https : http).Agent({
+      keepAlive: true,
+    })
   }
 }
 
@@ -45,13 +46,13 @@ function FetchAdapter(options) {
  * @param {?string} options.body Request body utf8 string.
  * @params {?object} options.streamConsumer Stream consumer.
  * @param {?object} options.signal Abort signal object.
- * @param {?number} options.timeout Request timeout.
+ * @param {?number} options.queryTimeout Request timeout.
  * @returns {Promise} Request result.
  */
 FetchAdapter.prototype.execute = function(options) {
   var signal = options.signal
   // Use timeout only if no signal provided
-  var useTimeout = !options.signal && !!options.timeout
+  var useTimeout = !options.signal && !!options.queryTimeout
   var timerId
 
   var cleanup = function() {
@@ -97,19 +98,16 @@ FetchAdapter.prototype.execute = function(options) {
     var ctrl = new AbortController()
 
     signal = ctrl.signal
-    timerId = setTimeout(ctrl.abort.bind(ctrl), options.timeout)
+    timerId = setTimeout(ctrl.abort.bind(ctrl), options.queryTimeout)
   }
 
-  return this._fetch(
-    util.formatUrl(options.origin, options.path, options.query),
-    {
-      method: options.method,
-      headers: options.headers,
-      body: options.body,
-      agent: this._keepAliveEnabledAgent,
-      signal: signal,
-    }
-  )
+  return this._fetch(formatUrl(options.origin, options.path, options.query), {
+    method: options.method,
+    headers: options.headers,
+    body: options.body,
+    agent: this._keepAliveEnabledAgent,
+    signal: signal,
+  })
     .then(onResponse)
     .catch(onError)
 }
@@ -139,7 +137,7 @@ function attachStreamConsumer(response, consumer) {
     consumer.onError(remapFetchError(error))
   }
 
-  if (util.isNodeEnv()) {
+  if (isNodeEnv()) {
     response.body
       .on('error', onError)
       .on('data', consumer.onData)
@@ -177,7 +175,7 @@ function attachStreamConsumer(response, consumer) {
 
     pump().catch(onError)
   } catch (err) {
-    throw new faunaErrors.StreamsNotSupported(
+    throw new StreamsNotSupported(
       'Please, consider providing a Fetch API-compatible function ' +
         'with streamable response bodies. ' +
         err
@@ -201,7 +199,7 @@ function remapFetchError(error, useTimeout) {
     return error
   }
 
-  return useTimeout ? new errors.TimeoutError() : new errors.AbortError()
+  return useTimeout ? new TimeoutError() : new AbortError()
 }
 
 /**
@@ -223,7 +221,7 @@ function resolveFetch(fetchOverride) {
     return global.fetch.bind(global)
   }
 
-  return require('cross-fetch')
+  return crossFetch
 }
 
 /**
@@ -245,5 +243,3 @@ function responseHeadersAsObject(headers) {
 
   return result
 }
-
-module.exports = FetchAdapter

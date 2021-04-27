@@ -1,15 +1,20 @@
 'use strict'
 
-var packageJson = require('../package.json')
-var PageHelper = require('./PageHelper')
-var RequestResult = require('./RequestResult')
-var errors = require('./errors')
-var http = require('./_http')
-var json = require('./_json')
-var query = require('./query')
-var stream = require('./stream')
-var util = require('./_util')
-var values = require('./values')
+import packageJson from '../package.json'
+import { FaunaHTTPError } from './errors'
+import PageHelper from './PageHelper'
+import { wrap } from './query/common'
+import RequestResult from './RequestResult'
+import { Ref } from './values'
+import HttpClient from './_http'
+import { parseJSON } from './_json'
+import {
+  applyDefaults,
+  checkInstanceHasProperty,
+  defaults,
+  getEnvVariable,
+  removeUndefinedValues,
+} from './_util'
 
 /**
  * The callback that will be executed after every completed request.
@@ -147,7 +152,6 @@ var values = require('./values')
  * @param {?number} options.port
  *   Port of the FaunaDB server.
  * @param {?string} options.secret FaunaDB secret (see [Reference Documentation](https://app.fauna.com/documentation/intro/security))
- * @param {?number} options.timeout Read timeout in seconds.
  * @param {?Client~observerCallback} options.observer
  *   Callback that will be called after every completed request.
  * @param {?boolean} options.keepAlive
@@ -161,32 +165,30 @@ var values = require('./values')
  *   when there's no activity. Only applicable for NodeJS environment (when http2 module is used), 500 by default,
  *   can be configured via FAUNADB_HTTP2_SESSION_IDLE_TIME environment variable.
  */
-function Client(options) {
+export default function Client(options) {
   var http2SessionIdleTimeEnv = parseInt(
-    util.getEnvVariable('FAUNADB_HTTP2_SESSION_IDLE_TIME'),
+    getEnvVariable('FAUNADB_HTTP2_SESSION_IDLE_TIME'),
     10
   )
   var http2SessionIdleTimeDefault = !isNaN(http2SessionIdleTimeEnv)
     ? http2SessionIdleTimeEnv
     : 500
 
-  options = util.applyDefaults(options, {
+  options = applyDefaults(options, {
     domain: 'db.fauna.com',
     scheme: 'https',
     port: null,
     secret: null,
-    timeout: 60,
     observer: null,
     keepAlive: true,
     headers: {},
     fetch: undefined,
-    queryTimeout: null,
+    queryTimeout: 60 * 1000,
     http2SessionIdleTime: http2SessionIdleTimeDefault,
   })
 
   this._observer = options.observer
-  this._http = new http.HttpClient(options)
-  this.stream = stream.StreamAPI(this)
+  this._http = new HttpClient(options)
 }
 
 /**
@@ -208,7 +210,7 @@ Client.apiVersion = packageJson.apiVersion
  * @return {external:Promise<Object>} FaunaDB response object.
  */
 Client.prototype.query = function(expression, options) {
-  return this._execute('POST', '', query.wrap(expression), null, options)
+  return this._execute('POST', '', wrap(expression), null, options)
 }
 
 /**
@@ -224,8 +226,8 @@ Client.prototype.query = function(expression, options) {
  * @returns {PageHelper} A PageHelper that wraps the provided expression.
  */
 Client.prototype.paginate = function(expression, params, options) {
-  params = util.defaults(params, {})
-  options = util.defaults(options, {})
+  params = defaults(params, {})
+  options = defaults(options, {})
 
   return new PageHelper(this, expression, params, options)
 }
@@ -234,8 +236,11 @@ Client.prototype.paginate = function(expression, params, options) {
  * Sends a `ping` request to FaunaDB.
  * @return {external:Promise<string>} Ping response.
  */
-Client.prototype.ping = function(scope, timeout) {
-  return this._execute('GET', 'ping', null, { scope: scope, timeout: timeout })
+Client.prototype.ping = function(scope, queryTimeout) {
+  return this._execute('GET', 'ping', null, {
+    scope: scope,
+    timeout: queryTimeout,
+  })
 }
 
 /**
@@ -260,17 +265,14 @@ Client.prototype.syncLastTxnTime = function(time) {
 }
 
 Client.prototype._execute = function(method, path, data, query, options) {
-  query = util.defaults(query, null)
+  query = defaults(query, null)
 
-  if (
-    path instanceof values.Ref ||
-    util.checkInstanceHasProperty(path, '_isFaunaRef')
-  ) {
+  if (path instanceof Ref || checkInstanceHasProperty(path, '_isFaunaRef')) {
     path = path.value
   }
 
   if (query !== null) {
-    query = util.removeUndefinedValues(query)
+    query = removeUndefinedValues(query)
   }
 
   var startTime = Date.now()
@@ -289,7 +291,7 @@ Client.prototype._execute = function(method, path, data, query, options) {
     )
     .then(function(response) {
       var endTime = Date.now()
-      var responseObject = json.parseJSON(response.body)
+      var responseObject = parseJSON(response.body)
       var result = new RequestResult(
         method,
         path,
@@ -324,7 +326,5 @@ Client.prototype._handleRequestResult = function(response, result, options) {
     }
   })
 
-  errors.FaunaHTTPError.raiseForStatusCode(result)
+  FaunaHTTPError.raiseForStatusCode(result)
 }
-
-module.exports = Client

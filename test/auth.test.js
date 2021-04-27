@@ -1,7 +1,7 @@
-const fetch = require('cross-fetch')
-const query = require('../src/query')
-const util = require('./util')
-const errors = require('../src/errors')
+import fetch from 'cross-fetch'
+import * as query from '../src/query'
+import * as util from './util'
+import * as errors from '../src/errors'
 
 describe('auth', () => {
   describe('AccessProvider Auth0', () => {

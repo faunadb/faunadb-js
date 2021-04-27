@@ -1,8 +1,8 @@
 'use strict'
 
-var query = require('../src/query')
-var PageHelper = require('../src/PageHelper')
-var util = require('./util')
+import PageHelper from '../src/PageHelper'
+import * as query from '../src/query'
+import * as util from './util'
 
 var client
 

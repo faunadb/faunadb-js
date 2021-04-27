@@ -1,0 +1,18 @@
+{
+  "name": "faunadb/stream",
+  "version": "5.0.0",
+  "apiVersion": "4",
+  "description": "FaunaDB Javascript driver for Node.JS and Browsers",
+  "browser": {
+    "http2": false,
+    "http": false,
+    "https": false,
+    "os": false,
+    "util": false
+  },
+  "types": "../src/types/stream.d.ts",
+  "main": "../cjs/stream.js",
+  "module": "../esm5/stream.js",
+  "es2015": "../src/stream.js",
+  "sideEffects": false
+}
