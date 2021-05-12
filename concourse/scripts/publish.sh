@@ -1,9 +1,8 @@
 #!/bin/sh
 
-NPM_TOKEN="just_a_test"
+set -eou
 
-ls -la
-cd ./fauna-js-repository  || exit 1
+cd ./fauna-js-repository
 
 mkdir dist
 npm install

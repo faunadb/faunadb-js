@@ -1,0 +1,17 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: node
+    tag: 15.14.0-alpine3.10
+
+inputs:
+  - name: fauna-js-repository
+  - name: fauna-js-repository-docs
+
+outputs:
+  - name: fauna-js-repository-updated-docs
+
+run:
+  path: ./fauna-js-repository/concourse/scripts/publish_docs.sh
