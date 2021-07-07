@@ -1,0 +1,16 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: node
+    tag: 15.14.0-alpine3.10
+
+params:
+  NPM_TOKEN:
+
+inputs:
+  - name: fauna-js-repository
+
+run:
+  path: ./fauna-js-repository/concourse/scripts/publish.sh

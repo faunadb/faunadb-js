@@ -1,0 +1,31 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: karlkfi/concourse-dcind
+
+params:
+  FAUNA_ROOT_KEY:
+  FAUNA_DOMAIN:
+  FAUNA_SCHEME:
+  FAUNA_PORT:
+  AUTH_0_URI:
+  AUTH_0_CLIENT_ID:
+  AUTH_0_CLIENT_SECRET:
+
+inputs:
+  - name: fauna-js-repository
+
+run:
+  path: entrypoint.sh
+  args:
+    - bash
+    - -ceu
+    - |
+      # start containers
+      docker-compose -f fauna-js-repository/concourse/tasks/integration.yml run tests
+      # stop and remove containers
+      docker-compose -f fauna-js-repository/concourse/tasks/integration.yml down
+      # remove volumes
+      docker volume rm $(docker volume ls -q)

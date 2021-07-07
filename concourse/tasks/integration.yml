@@ -1,0 +1,29 @@
+version: "3.3"
+
+services:
+  faunadb:
+    image: fauna/faunadb
+    container_name: faunadb
+    healthcheck:
+      test: ["CMD", "curl" ,"http://faunadb:8443/ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  tests:
+    environment:
+      - FAUNA_ROOT_KEY
+      - FAUNA_DOMAIN
+      - FAUNA_SCHEME
+      - FAUNA_PORT
+      - AUTH_0_URI
+      - AUTH_0_CLIENT_ID
+      - AUTH_0_CLIENT_SECRET
+    image: node:15.14.0-alpine3.10
+    container_name: mytests
+    depends_on:
+      - faunadb
+    volumes:
+      - "../../:/tmp/app"
+    working_dir: "/tmp/app"
+    command: [sh, -c, "npm install && npm test"]

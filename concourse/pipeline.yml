@@ -1,0 +1,48 @@
+---
+resources:
+  - name: fauna-js-repository
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/fauna/faunadb-js.git
+      branch: master
+
+  - name: fauna-js-repository-docs
+    type: git
+    icon: github
+    source:
+      uri: git@github.com:fauna/faunadb-js.git
+      branch: gh-pages
+      private_key: ((fauna/repo.key))
+
+jobs:
+  - name: release
+    serial: true
+    public: false
+    plan:
+      - get: fauna-js-repository
+      - get: fauna-js-repository-docs
+
+      - task: integration-tests
+        file: fauna-js-repository/concourse/tasks/integration-tests.yml
+        privileged: true
+        params:
+          FAUNA_ROOT_KEY: ((fauna.secret))
+          FAUNA_DOMAIN: ((fauna.domain))
+          FAUNA_SCHEME: ((fauna.scheme))
+          FAUNA_PORT: ((fauna.port))
+          AUTH_0_URI: ((fauna/auth0.uri))
+          AUTH_0_CLIENT_ID: ((fauna/auth0/client.id))
+          AUTH_0_CLIENT_SECRET: ((fauna/auth0/client.secret))
+
+      - task: browserify-and-npm-publish
+        file: fauna-js-repository/concourse/tasks/browserify-and-npm-publish.yml
+        params:
+          NPM_TOKEN: ((fauna/npm.token))
+
+      - task: publish-docs
+        file: fauna-js-repository/concourse/tasks/publish-docs.yml
+
+      - put: fauna-js-repository-docs
+        params:
+          repository: fauna-js-repository-updated-docs
