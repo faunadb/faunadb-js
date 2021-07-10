@@ -361,7 +361,26 @@ function Query(value) {
 util.inherits(Query, Value)
 
 wrapToString(Query, function() {
-  return 'Query(' + Expr.toString(this.value) + ')'
+  const metadata = {
+    api_version: +this.value.api_version,
+  }
+
+  const notEmptyMetadata = Object.keys(metadata).some(key => metadata[key])
+
+  let stringified
+  if (notEmptyMetadata) {
+    stringified = [
+      'Query(',
+      Expr.toString(this.value),
+      ', ',
+      JSON.stringify(metadata),
+      ')',
+    ]
+  } else {
+    stringified = ['Query(', Expr.toString(this.value), ')']
+  }
+
+  return stringified.join('')
 })
 
 /** @ignore */
